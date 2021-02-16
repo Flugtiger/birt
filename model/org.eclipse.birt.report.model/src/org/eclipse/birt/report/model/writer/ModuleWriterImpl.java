@@ -751,6 +751,19 @@ abstract class ModuleWriterImpl extends ElementVisitor
 	{
 		PropertyDefn propDefn = obj.getPropertyDefn( propName );
 
+		// if connection profile is used as data source then
+		// do not write the password into report design
+		Object valueCP = obj.getLocalProperty( getModule( ),
+				"OdaConnProfileStorePath" );
+		if ( ( propName.equalsIgnoreCase( "password" )
+				|| propName.equalsIgnoreCase( "odaPassword" ) )
+				&& valueCP != null )
+		{
+			String xmlCP = propDefn.getXmlValue( getModule( ), valueCP );
+			if ( xmlCP != null )
+				return;
+		}
+
 		// The style property is not available for all elements.
 
 		if ( propDefn == null )
