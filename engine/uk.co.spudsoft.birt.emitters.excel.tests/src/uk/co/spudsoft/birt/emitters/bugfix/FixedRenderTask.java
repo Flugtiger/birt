@@ -1,12 +1,12 @@
 /*************************************************************************************
  * Copyright (c) 2011, 2012, 2013 James Talbut.
  *  jim-emitters@spudsoft.co.uk
- *  
- * All rights reserved. This program and the accompanying materials 
+ *
+ * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * 
+ *
  * Contributors:
  *     James Talbut - Initial implementation.
  ************************************************************************************/
@@ -84,7 +84,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 	protected ITOCReader tocReader;
 	protected boolean designLoaded = false;
 	protected boolean variablesLoaded = false;
-	
+
 	//the flag of render page by page
 	protected boolean PDFRenderPageByPage = true;
 
@@ -115,7 +115,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 		this.reportRunnable = runnable;
 		initRenderTask();
 	}
-	
+
 	protected void initRenderTask()
 	{
 		executionContext.setFactoryMode( false );
@@ -146,7 +146,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 		}
 
 	}
-	
+
 	/**
 	 * Loads parameters and global variables from report document. Since the
 	 * application context is not available and application class loader can't
@@ -198,7 +198,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.eclipse.birt.report.engine.api.IRenderTask#render(long)
 	 */
 	public void render( long pageNumber ) throws EngineException
@@ -239,7 +239,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.eclipse.birt.report.engine.api.IRenderTask#render()
 	 */
 	public void render( ) throws EngineException
@@ -280,7 +280,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 			}
 
 			updateRtLFlag( );
-			
+
 			ReportDesignHandle design = executionContext.getReportDesign( );
 			if ( DesignChoiceConstants.REPORT_LAYOUT_PREFERENCE_FIXED_LAYOUT
 					.equals( design.getLayoutPreference( ) ) )
@@ -345,7 +345,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.eclipse.birt.report.engine.api.IRenderTask#render()
 	 */
 	public void setPageNumber( long pageNumber ) throws EngineException
@@ -450,7 +450,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 				{
 					return true;
 				}
-				
+
 				// the output pages is sequential or there is no page sequence,
 				// in this case, we can output the report content as a whole and
 				// the HTML layout engine may re-paginate the content into
@@ -579,7 +579,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 					pagination, renderOptions );
 
 			layoutEngine.setLocale( executionContext.getLocale( ) );
-			
+
 			ReportDesignHandle design = executionContext.getReportDesign( );
 			if ( DesignChoiceConstants.REPORT_LAYOUT_PREFERENCE_FIXED_LAYOUT
 					.equals( design.getLayoutPreference( ) ) )
@@ -593,7 +593,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 						emitter,
 						renderOptions, executionContext,
 						getDocumentTotalPage( ) );
-				
+
 				emitter = pdfEmitter;
 				initializeContentEmitter( emitter );
 			}
@@ -875,7 +875,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 		}
 		return tocTree;
 	}
-	
+
 	public long getTotalPage( ) throws EngineException
 	{
 		LogicalPageSequence visiblePages = loadVisiblePages( );
@@ -885,7 +885,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 		}
 		return reportDocument.getPageCount( );
 	}
-	
+
 	@SuppressWarnings("rawtypes")
 	public HashMap getParameterValues( )
 	{
@@ -1011,7 +1011,7 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 		visiblePageLoaded = false;
 		logicalPageSequence = null;
 	}
-	
+
 	protected IReportExecutor createRenderExtensionExecutor(
 			IReportExecutor executor ) throws EngineException
 	{
@@ -1037,5 +1037,5 @@ public class FixedRenderTask extends EngineTask implements IRenderTask
 		}
 		return executor;
 	}
-	
+
 }

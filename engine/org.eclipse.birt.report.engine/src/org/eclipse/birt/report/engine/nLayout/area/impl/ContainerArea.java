@@ -16,6 +16,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.eclipse.birt.core.exception.BirtException;
 import org.eclipse.birt.report.engine.content.IContent;
@@ -25,6 +26,7 @@ import org.eclipse.birt.report.engine.css.engine.value.FloatValue;
 import org.eclipse.birt.report.engine.executor.ExecutionContext;
 import org.eclipse.birt.report.engine.ir.DimensionType;
 import org.eclipse.birt.report.engine.ir.EngineIRConstants;
+import org.eclipse.birt.report.engine.ir.ReportElementDesign;
 import org.eclipse.birt.report.engine.layout.PDFConstants;
 import org.eclipse.birt.report.engine.layout.pdf.util.PropertyUtil;
 import org.eclipse.birt.report.engine.nLayout.LayoutContext;
@@ -346,6 +348,50 @@ public abstract class ContainerArea extends AbstractArea
 	public void relayout( )
 	{
 		// FIXME to implement
+	}
+	
+	// copied from AbstractLM
+	public int getDimensionValue( String d )
+	{
+
+		if ( d == null )
+		{
+			return 0;
+		}
+		try
+		{
+			if ( d.endsWith( "in" ) || d.endsWith( "in" ) ) //$NON-NLS-1$ //$NON-NLS-2$
+			{
+				return (int) ( ( Float.valueOf( d
+						.substring( 0, d.length( ) - 2 ) ).floatValue( ) ) * 72000.0f );
+			}
+			else if ( d.endsWith( "cm" ) || d.endsWith( "CM" ) ) //$NON-NLS-1$//$NON-NLS-2$
+			{
+				return (int) ( ( Float.valueOf( d
+						.substring( 0, d.length( ) - 2 ) ).floatValue( ) ) * 72000.0f / 2.54f );
+			}
+			else if ( d.endsWith( "mm" ) || d.endsWith( "MM" ) ) //$NON-NLS-1$ //$NON-NLS-2$
+			{
+				return (int) ( ( Float.valueOf( d
+						.substring( 0, d.length( ) - 2 ) ).floatValue( ) ) * 7200.0f / 2.54f );
+			}
+			else if ( d.endsWith( "px" ) || d.endsWith( "PX" ) ) //$NON-NLS-1$//$NON-NLS-2$
+			{
+				return (int) ( ( Float.valueOf( d
+						.substring( 0, d.length( ) - 2 ) ).floatValue( ) ) / 96.0f * 72000.0f );// set
+				// as
+				// 96dpi
+			}
+			else // angenommen werden pt
+			{
+				return (int) ( ( Float.valueOf( d ).floatValue( ) ) );
+			}
+		}
+		catch ( NumberFormatException ex )
+		{
+			logger.log( Level.WARNING, ex.getLocalizedMessage( ) );
+			return 0;
+		}
 	}
 	
 	protected void checkDisplayNone( )

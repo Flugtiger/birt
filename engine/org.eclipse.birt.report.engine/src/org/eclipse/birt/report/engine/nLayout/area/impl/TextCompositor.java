@@ -335,16 +335,18 @@ public class TextCompositor
 				wordVestige = null;
 				insertFirstExceedWord = false;
 			}
-			if ( isNewLine && context.isEnableWordbreak( ))
+			if ( isNewLine && textArea.isEmpty( ) )
 			{
-				doWordBreak( word.getValue( ), textArea );
-			}
-			else if ( isNewLine && textArea.isEmpty( ) )
-			{
-				// If width of a word is larger than the max line width, add
-				// it into the line directly.
-				addWord( textArea, textLength, wordWidth );
-
+				if ( context.isEnableWordbreak( ) )
+				{
+					doWordBreak( word.getValue( ), textArea );
+				}
+				else
+				{
+					// If width of a word is larger than the max line width, add
+					// it into the line directly.
+					addWord( textArea, textLength, wordWidth );
+				}
 			}
 			else
 			{

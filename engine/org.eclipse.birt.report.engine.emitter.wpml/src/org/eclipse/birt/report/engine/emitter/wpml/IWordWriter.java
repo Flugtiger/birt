@@ -52,7 +52,7 @@ public interface IWordWriter
 			int leftMargin, int rightMargin );
 
 	void startTable( IStyle style, int tableWidth );
-	
+
 	void startTable( IStyle style, int tableWidth, boolean inForeign );
 
 	void endTable( );
@@ -60,7 +60,7 @@ public interface IWordWriter
 	void writeColumn( int[] cols );
 
 	void startTableRow( double height, boolean isHeader, boolean repeatHeader,
-			boolean fixedLayout );
+			boolean fixedLayout, boolean cantSplit );
 
 	void startTableRow( double height );
 
@@ -69,7 +69,7 @@ public interface IWordWriter
 	void startTableCell( int width, IStyle style, SpanInfo info );
 
 	void endTableCell( boolean needEmptyP );
-	
+
 	void endTableCell( boolean needEmptyP, boolean inForeign );
 
 	void writeSpanCell( SpanInfo info );
@@ -77,7 +77,7 @@ public interface IWordWriter
 	void writeEmptyCell( );
 
 	void writeTOC( String toc, int tocLevel );
-	
+
 	void writeTOC( String toc, String color, int tocLevel, boolean middleInline );
 
 	void insertHiddenParagraph( );
@@ -101,7 +101,9 @@ public interface IWordWriter
 
 	void endHeader( );
 
-	void startFooter( int footerHeight, int footerWidth ) throws IOException;
+	boolean mustCloneFooter( );
+
+	void startFooter( boolean isFirstPage, int footerHeight, int footerWidth ) throws IOException;
 
 	void endFooter( );
 
@@ -115,4 +117,7 @@ public interface IWordWriter
 	void startPage( );
 
 	void endPage( );
+
+	void writeEmptyElement(String tag);
+
 }

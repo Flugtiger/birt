@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.eclipse.birt.core.exception.BirtException;
 import org.eclipse.birt.report.engine.api.IRenderOption;
 import org.eclipse.birt.report.engine.content.IAutoTextContent;
@@ -57,6 +58,8 @@ public abstract class ExcelEmitter implements IContentEmitter {
 	public static final String REMOVE_BLANK_ROWS = "ExcelEmitter.RemoveBlankRows";
 	public static final String ROTATION_PROP = "ExcelEmitter.Rotation";
 	public static final String FORCEAUTOCOLWIDTHS_PROP = "ExcelEmitter.ForceAutoColWidths";
+	public static final String AUTO_COL_WIDTHS_HEADER = "ExcelEmitter.AutoColWidthsIncludeTableHeader";
+	public static final String AUTO_COL_WIDTHS_FOOTER = "ExcelEmitter.AutoColWidthsIncludeTableFooter";
 	public static final String SINGLE_SHEET = "ExcelEmitter.SingleSheet";
 	public static final String SINGLE_SHEET_PAGE_BREAKS = "ExcelEmitter.SingleSheetWithPageBreaks";
 	public static final String PRINT_BREAK_AFTER = "ExcelEmitter.InsertPrintBreakAfter";
@@ -70,6 +73,7 @@ public abstract class ExcelEmitter implements IContentEmitter {
 	public static final String BLANK_ROW_AFTER_TOP_LEVEL_TABLE = "ExcelEmitter.BlankRowAfterTopLevelTable";
 	public static final String SPANNED_ROW_HEIGHT = "ExcelEmitter.SpannedRowHeight";
 	public static final String NEST_TABLE_IN_LAST_CELL = "ExcelEmitter.NestedTableInLastCell";
+	public static final String NO_STYLES = "ExcelEmitter.NoStyles";
 	public static final int SPANNED_ROW_HEIGHT_SPREAD = 0;
 	public static final int SPANNED_ROW_HEIGHT_FIRST = 1;
 	public static final int SPANNED_ROW_HEIGHT_IGNORED = 2;
@@ -83,7 +87,13 @@ public abstract class ExcelEmitter implements IContentEmitter {
 	public static final String DISPLAYROWCOLHEADINGS_PROP = "ExcelEmitter.DisplayRowColHeadings";
 	public static final String DISPLAYZEROS_PROP = "ExcelEmitter.DisplayZeros";
 
+	public static final String VALUE_AS_FORMULA = "ExcelEmitter.ValueAsFormula";
+	public static final String FORMULA = "ExcelEmitter.Formula";
+
 	public static final String TEMPLATE_FILE = "ExcelEmitter.TemplateFile";
+	public static final String FORCE_RECALCULATION = "ExcelEmitter.ForceRecalculation";
+	
+	public static final String EXTRACT_MODE = "ExcelEmitter.ExtractMode";
 	
 	/**
 	 * Logger.
@@ -128,6 +138,11 @@ public abstract class ExcelEmitter implements IContentEmitter {
 	 */
 	private StyleManagerUtils.Factory utilsFactory;
 	
+	/**
+	 * Extract mode is enabled
+	 */
+	protected boolean extractMode;
+	
 	protected ExcelEmitter(StyleManagerUtils.Factory utilsFactory) {
 		this.utilsFactory = utilsFactory;
 		try {
@@ -163,6 +178,12 @@ public abstract class ExcelEmitter implements IContentEmitter {
 	 */
 	protected abstract Workbook openWorkbook( File templateFile ) throws IOException;
 	
+	/**
+	 * Return true if the emitter is in ExtractMode
+	 */
+	public boolean isExtractMode() {
+		return extractMode;
+	}
 	
 	public void initialize( IEmitterServices service ) throws BirtException {
 		renderOptions = service.getRenderOption();
@@ -183,18 +204,25 @@ public abstract class ExcelEmitter implements IContentEmitter {
 
 	public void start( IReportContent report ) throws BirtException {
 		log.addPrefix('>');
-		log.info( 0, "start:" + report.toString(), null);
+		log.info( 0, "start:" + report.getTitle(), null);
 		
-		String templatePath = EmitterServices.stringOption( renderOptions, report, TEMPLATE_FILE, null );
+		extractMode = EmitterServices.booleanOption( renderOptions, report, EXTRACT_MODE, false );
+		String templatePath = extractMode ? null : EmitterServices.stringOption( renderOptions, report, TEMPLATE_FILE, null );
 	    Workbook wb;
 		if( templatePath != null ) {
 			URL templateURL = report.getReportContext().getResource( templatePath );
+			if( templateURL == null ) {
+				throw new BirtException( EmitterServices.getPluginName()
+						, "Unable locate template resource for " + templatePath
+						, null
+						);			
+			}
 			File templateFile;
 			try {
 				templateFile = new File( templateURL.toURI() );
 			} catch( URISyntaxException ex ) {
 				throw new BirtException( EmitterServices.getPluginName()
-						, "Unable locate template resource for " + templatePath
+						, "Unable locate template file for " + templatePath
 						, ex
 						);			
 			}
@@ -208,6 +236,10 @@ public abstract class ExcelEmitter implements IContentEmitter {
 			}
 		} else {
 		    wb = createWorkbook();
+		}
+		
+		if( EmitterServices.booleanOption( renderOptions, report, ExcelEmitter.FORCE_RECALCULATION, false ) ) {
+			wb.setForceFormulaRecalculation(true);
 		}
 		
 	    CSSEngine cssEngine = report.getRoot().getCSSEngine();
@@ -262,9 +294,9 @@ public abstract class ExcelEmitter implements IContentEmitter {
 			ex.printStackTrace();
 			
 			throw new BirtException( EmitterServices.getPluginName()
-					, "Unable to save file (\"{}\")"
-					, new Object[] { reportOutputFilename }
-					, null
+					, reportOutputStream == null ?
+							"Unable to save file (\"" + reportOutputFilename + "\")"
+							: "Unable to save file to stream"
 					, ex 
 					);
 		} finally {
@@ -275,6 +307,15 @@ public abstract class ExcelEmitter implements IContentEmitter {
 					log.debug("ex:", ex.toString());
 				}
 			}
+			
+			if (handlerState.getWb() instanceof SXSSFWorkbook) {
+				// dispose SXSSFWorkbook to let it removing temporary files
+				SXSSFWorkbook wb = (SXSSFWorkbook) handlerState.getWb();
+				if (!wb.dispose()) {
+					log.error(0, "Failed to dispose SXSSFWorkbook.", new Exception("SXSSFWorkbook.dispose() has returned false."));
+				}
+			}
+				
 			handlerState = null;
 			reportOutputFilename = null;			
 			reportOutputStream = null;
@@ -398,7 +439,9 @@ public abstract class ExcelEmitter implements IContentEmitter {
 
 	public void startImage( IImageContent image ) throws BirtException {
 		log.debug( handlerState, "startImage: " );
-		handlerState.getHandler().emitImage(handlerState,image);
+		if( ! extractMode ) {
+			handlerState.getHandler().emitImage(handlerState,image);
+		}
 	}
 
 	public void startContent( IContent content ) throws BirtException {

@@ -44,13 +44,13 @@ public class TableLayout
 	protected int startCol;
 
 	protected int endCol;
-	
+
 	protected RowArea unresolvedRow;
-	
+
 	private RowArea currentRow;
-	
+
 	private boolean isRTL = false;
-	
+
 	public TableLayout( ITableContent tableContent, TableLayoutInfo layoutInfo,
 			int startCol, int endCol )
 	{
@@ -72,7 +72,7 @@ public class TableLayout
 			unresolvedRow = row;
 		}
 	}
-	
+
 	public RowArea getNextRow(RowArea row)
 	{
 		int index = rows.indexOf( row );
@@ -82,7 +82,7 @@ public class TableLayout
 		}
 		return null;
 	}
-	
+
 	protected int resolveBottomBorder( CellArea cell )
 	{
 		IStyle tableStyle = tableContent.getComputedStyle( );
@@ -141,7 +141,7 @@ public class TableLayout
 		}
 		rows.resetCursor( );
 	}
-	
+
 	public void clear()
 	{
 		rows.clear( );
@@ -151,7 +151,7 @@ public class TableLayout
 	protected IStyle getLeftCellContentStyle( RowArea lastRow, CellArea currentCell )
 	{
 		RowArea currentRow = (RowArea) currentCell.getParent( );
-		int columnID = currentCell.getColumnID( ); 
+		int columnID = currentCell.getColumnID( );
 		CellArea cell = null;
 //		if ( isRTL )
 //		{
@@ -188,7 +188,7 @@ public class TableLayout
 
 	/**
 	 * resolve cell border conflict
-	 * 
+	 *
 	 * @param cellArea
 	 */
 	public void resolveBorderConflict( CellArea cellArea, boolean isFirst )
@@ -242,7 +242,7 @@ public class TableLayout
 							rowStyle, columnStyle, cellContentStyle );
 					if ( border != null )
 					{
-						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 						{
 							cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 						}
@@ -258,7 +258,7 @@ public class TableLayout
 							null, columnStyle, null );
 					if ( border != null )
 					{
-						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 						{
 							cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 						}
@@ -278,7 +278,7 @@ public class TableLayout
 							rowStyle, columnStyle, cellContentStyle );
 					if ( border != null )
 					{
-						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 						{
 							cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 						}
@@ -295,7 +295,7 @@ public class TableLayout
 							cellContentStyle );
 					if ( border != null )
 					{
-						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 						{
 							cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 						}
@@ -316,7 +316,7 @@ public class TableLayout
 									columnStyle, cellContentStyle );
 					if ( border != null )
 					{
-						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 						{
 							cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 						}
@@ -334,7 +334,7 @@ public class TableLayout
 						preColumnStyle, cellContentStyle, leftCellContentStyle );
 				if ( border != null )
 				{
-					if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+					if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 					{
 						cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 					}
@@ -354,7 +354,7 @@ public class TableLayout
 							rowStyle, topCellStyle, cellContentStyle );
 					if ( border != null )
 					{
-						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 						{
 							cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 						}
@@ -370,7 +370,7 @@ public class TableLayout
 							null, topCellStyle, null );
 					if ( border != null )
 					{
-						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 						{
 							cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 						}
@@ -390,7 +390,7 @@ public class TableLayout
 							rowStyle, columnStyle, cellContentStyle );
 					if ( border != null )
 					{
-						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 						{
 							cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 						}
@@ -408,7 +408,7 @@ public class TableLayout
 							cellContentStyle );
 					if ( border != null )
 					{
-						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 						{
 							cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 						}
@@ -428,7 +428,7 @@ public class TableLayout
 									columnStyle, cellContentStyle );
 					if ( border != null )
 					{
-						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+						if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 						{
 							cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 						}
@@ -446,7 +446,7 @@ public class TableLayout
 						preColumnStyle, cellContentStyle, leftCellContentStyle );
 				if ( border != null )
 				{
-					if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT ) 
+					if ( cellArea.getBoxStyle( ) == BoxStyle.DEFAULT )
 					{
 						cellArea.setBoxStyle( new BoxStyle( BoxStyle.DEFAULT ));
 					}
@@ -459,7 +459,7 @@ public class TableLayout
 
 	/**
 	 * get column style
-	 * 
+	 *
 	 * @param columnID
 	 * @return
 	 */
@@ -586,7 +586,7 @@ public class TableLayout
 	/**
 	 * When pagination happens, if drop cells should be finished by force, we
 	 * need to end these cells and vertical align for them.
-	 * 
+	 *
 	 */
 	public int resolveAll( RowArea row )
 	{
@@ -610,7 +610,7 @@ public class TableLayout
 			{
 				DummyCell dummyCell = (DummyCell) cell;
 				int delta = dummyCell.getDelta( );
-				//FIXME 
+				//FIXME
 				//height = Math.max( height, dummyCell.getCell( ).getHeight( ) - delta );
 			}
 			else
@@ -738,7 +738,7 @@ public class TableLayout
 		updateRow( rowArea, isFixedLayout );
 		rows.add( rowArea );
 	}
-	
+
 	protected boolean isUnresolved(RowArea row)
 	{
 		if ( !row.finished )
@@ -755,8 +755,8 @@ public class TableLayout
 		}
 		return false;
 	}
-	
-	
+
+
 	public void setMergeUnresolvedRowHint( )
 	{
 
@@ -786,7 +786,7 @@ public class TableLayout
 			}
 		}
 	}
-	
+
 	protected boolean isSpecifiedHeight( RowArea area )
 	{
 		IContent content = area.getContent( );
@@ -802,7 +802,7 @@ public class TableLayout
 		}
 		return false;
 	}
-	
+
 	private boolean isEmptyRow( RowArea rowArea )
 	{
 		for ( int i = startCol; i <= endCol; i++ )
@@ -820,7 +820,7 @@ public class TableLayout
 	 * 1) Creates row wrapper. 2) For the null cell in the row wrapper, fills
 	 * the relevant position with dummy cell or empty cell. 3) Updates the
 	 * height of the row and the cells in the row.
-	 * 
+	 *
 	 * @param rowArea
 	 *            current rowArea.
 	 */
@@ -847,8 +847,7 @@ public class TableLayout
 			lastRow = (RowArea) rows.getCurrent( );
 		}
 		currentRow = rowArea;
-		// Do not use specified height if row is empty to avoid endless page break
-		int sheight = isEmptyRow( rowArea ) ? 0 : rowArea.getSpecifiedHeight( );
+		int sheight = rowArea.getSpecifiedHeight( );
 		int height = sheight;
 		/*
 		 * In this case, the row should be the first row of new page. 1. this
@@ -926,7 +925,7 @@ public class TableLayout
 						{
 							cell = createEmptyCell( null, i, rowArea );
 						}
-						
+
 					}
 					if ( cell != null )
 					{
@@ -949,7 +948,7 @@ public class TableLayout
 		}
 		updateRowHeight( rowArea, height, isFixedLayout );
 	}
-	
+
 	private CellArea createEmptyCell( CellArea upperCell,
 			int columnId, RowArea row )
 	{
@@ -961,7 +960,7 @@ public class TableLayout
 			cellContent = (ICellContent) upperCell.getContent( );
 			rowSpan = upperCell.getRowSpan( ) - 1;
 		}
-		
+
 		if ( cellContent == null )
 		{
 			cellContent = tableContent.getReportContent( )
@@ -983,7 +982,7 @@ public class TableLayout
 			emptyCell = new CellArea( );
 			emptyCell.content = cellContent;
 		}
-		
+
 		//clear border
 		BoxStyle bs = emptyCell.getBoxStyle( );
 		if ( bs != BoxStyle.DEFAULT )
@@ -991,16 +990,16 @@ public class TableLayout
 			bs.setRightBorder( null );
 			bs.setBottomBorder( null );
 		}
-		
+
 		emptyCell.setHeight( 0 );
 		emptyCell.setRowSpan( rowSpan );
-		
+
 		CellArea originalCell = upperCell;
 		if ( upperCell instanceof DummyCell )
 		{
 			originalCell = ( (DummyCell) upperCell ).getCell( );
 		}
-		
+
 		CellArea leftSideCellArea = null;
 		if ( emptyCellColID > startCol )
 		{
@@ -1039,10 +1038,10 @@ public class TableLayout
 		emptyCell.isDummy = true;
 		return emptyCell;
 	}
-	
+
 	/**
 	 * Creates dummy cell and updates its delta value.
-	 * 
+	 *
 	 * @param upperCell
 	 *            the upper cell.
 	 * @return the created dummy cell.
@@ -1081,7 +1080,7 @@ public class TableLayout
 
 	/**
 	 * Updates the row height and the height of the cells in the row.
-	 * 
+	 *
 	 * @param rowArea
 	 * @param height
 	 */
@@ -1136,13 +1135,13 @@ public class TableLayout
 	{
 		return rows;
 	}
-	
+
 /*
 	//---------debug
-	
-	
+
+
 	// a method for debugging.
-	
+
 	public static void getInfo( IArea area, int offsetX, int offsetY )
 	{
 		if( area instanceof CellArea )
@@ -1190,9 +1189,9 @@ public class TableLayout
 		offsetX = offsetX - area.getX( );
 		offsetY = offsetY - area.getY( );
 	}
-	
-*/	
-	
-	
+
+*/
+
+
 
 }

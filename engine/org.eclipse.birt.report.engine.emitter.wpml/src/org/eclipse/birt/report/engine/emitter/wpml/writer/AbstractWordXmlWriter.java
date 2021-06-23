@@ -20,6 +20,7 @@ import org.eclipse.birt.report.engine.content.IStyle;
 import org.eclipse.birt.report.engine.css.engine.StyleConstants;
 import org.eclipse.birt.report.engine.css.engine.value.css.CSSConstants;
 import org.eclipse.birt.report.engine.emitter.XMLWriter;
+import org.eclipse.birt.report.engine.emitter.wpml.AbstractEmitterImpl;
 import org.eclipse.birt.report.engine.emitter.wpml.AbstractEmitterImpl.TextFlag;
 import org.eclipse.birt.report.engine.emitter.wpml.DiagonalLineInfo;
 import org.eclipse.birt.report.engine.emitter.wpml.DiagonalLineInfo.Line;
@@ -27,6 +28,7 @@ import org.eclipse.birt.report.engine.emitter.wpml.HyperlinkInfo;
 import org.eclipse.birt.report.engine.emitter.wpml.SpanInfo;
 import org.eclipse.birt.report.engine.emitter.wpml.WordUtil;
 import org.eclipse.birt.report.engine.layout.pdf.util.PropertyUtil;
+
 import org.w3c.dom.css.CSSValue;
 
 public abstract class AbstractWordXmlWriter
@@ -41,11 +43,11 @@ public abstract class AbstractWordXmlWriter
 	protected final String TOP = "top";
 
 	protected final String BOTTOM = "bottom";
-	
+
 	public static final char SPACE = ' ';
-	
+
 	public static final String EMPTY_STRING = "";
-	
+
 	public static final int INDEX_NOTFOUND = -1;
 
 	protected int imageId = 75;
@@ -76,7 +78,7 @@ public abstract class AbstractWordXmlWriter
 	protected abstract void writeIndent( int indent );
 
 	protected abstract void writeIndent( int leftMargin, int rightMargin, int textIndent );
-		
+
 	public void startSectionInParagraph( )
 	{
 		writer.openTag( "w:p" );
@@ -245,7 +247,7 @@ public abstract class AbstractWordXmlWriter
 		writeTableLayout( );
 		writeTableBorders( style );
 		writeBackgroundColor( style.getBackgroundColor( ) );
-		
+
 		//"justify" is not an option for table alignment in word
 		if ( "justify".equalsIgnoreCase( style.getTextAlign( ) ) )
 		{
@@ -491,6 +493,7 @@ public abstract class AbstractWordXmlWriter
 				.equals( txt ) );
 	}
 
+	@SuppressWarnings("deprecation")
 	public void startParagraph( IStyle style, boolean isInline,
 			int paragraphWidth )
 	{
@@ -499,19 +502,20 @@ public abstract class AbstractWordXmlWriter
 		writeSpacing( ( style.getProperty( StyleConstants.STYLE_MARGIN_TOP ) ),
 				( style.getProperty( StyleConstants.STYLE_MARGIN_BOTTOM ) ) );
 		writeAlign( style.getTextAlign( ), style.getDirection( ) );
+
 		int indent = PropertyUtil.getDimensionValue( style
 				.getProperty( StyleConstants.STYLE_TEXT_INDENT ),
 				paragraphWidth ) / 1000 * 20;
-		
+
 		int leftMargin = PropertyUtil.getDimensionValue( style
 				.getProperty( StyleConstants.STYLE_MARGIN_LEFT ),
 				paragraphWidth ) / 1000 * 20;
-		
+
 		int rightMargin = PropertyUtil.getDimensionValue( style
 				.getProperty( StyleConstants.STYLE_MARGIN_RIGHT ),
 				paragraphWidth ) / 1000 * 20;
 		writeIndent( leftMargin, rightMargin, indent );
-		
+
 		if ( !isInline )
 		{
 			writeBackgroundColor( style.getBackgroundColor( ) );
@@ -522,13 +526,14 @@ public abstract class AbstractWordXmlWriter
 	}
 
 	/**
-	 * Used only in inline text .The  text align style of inline text 
+	 * Used only in inline text .The  text align style of inline text
 	 * is ignored,but its parent text align should be applied.
 	 * @param style
 	 * @param isInline
 	 * @param paragraphWidth
-	 * @param textAlign parent text align of inline text 
+	 * @param textAlign parent text align of inline text
 	 */
+	@SuppressWarnings("deprecation")
 	public void startParagraph( IStyle style, boolean isInline,
 			int paragraphWidth, String textAlign )
 	{
@@ -540,16 +545,16 @@ public abstract class AbstractWordXmlWriter
 		int indent = PropertyUtil.getDimensionValue( style
 				.getProperty( StyleConstants.STYLE_TEXT_INDENT ),
 				paragraphWidth ) / 1000 * 20;
-		
+
 		int leftMargin = PropertyUtil.getDimensionValue( style
 				.getProperty( StyleConstants.STYLE_MARGIN_LEFT ),
 				paragraphWidth ) / 1000 * 20;
-		
+
 		int rightMargin = PropertyUtil.getDimensionValue( style
 				.getProperty( StyleConstants.STYLE_MARGIN_RIGHT ),
 				paragraphWidth ) / 1000 * 20;
 		writeIndent( leftMargin, rightMargin, indent );
-		
+
 		if ( !isInline )
 		{
 			writeBackgroundColor( style.getBackgroundColor( ) );
@@ -597,6 +602,14 @@ public abstract class AbstractWordXmlWriter
 			writer.text( "NUMPAGES" );
 		}
 		writer.closeTag( "w:instrText" );
+	}
+
+	protected void writeSimpleField( String fieldFunction){
+		if (fieldFunction != null){
+			writer.openTag( "w:instrText" );
+			writer.text( fieldFunction );
+			writer.closeTag( "w:instrText" );
+		}
 	}
 
 	private void writeString( String txt, IStyle style )
@@ -649,7 +662,7 @@ public abstract class AbstractWordXmlWriter
 
 		writer.closeTag("w:t");
 	}
-	
+
 	/**
 	 * Word have extra limitation on text in run:
 	 * a. it must following xml format.
@@ -746,6 +759,16 @@ public abstract class AbstractWordXmlWriter
 		writer.closeTag( "w:r" );
 	}
 
+	protected void writeFieldSeparator( IStyle style, String fontName )
+	{
+		writer.openTag( "w:r" );
+		writeFieldRunProperties( style, fontName );
+		writer.openTag( "w:fldChar" );
+		writer.attribute( "w:fldCharType", "separate" );
+		writer.closeTag( "w:fldChar" );
+		writer.closeTag( "w:r" );
+	}
+
 	public void writeColumn( int[] cols )
 	{
 		// unit: twips
@@ -769,7 +792,7 @@ public abstract class AbstractWordXmlWriter
 	 */
 
 	public void startTableRow( double height, boolean isHeader,
-			boolean repeatHeader, boolean fixedLayout )
+			boolean repeatHeader, boolean fixedLayout, boolean cantSplit )
 	{
 		writer.openTag( "w:tr" );
 
@@ -792,6 +815,11 @@ public abstract class AbstractWordXmlWriter
 		{
 			String headerOnOff = repeatHeader ? "on" : "off";
 			writeAttrTag( "w:tblHeader", headerOnOff );
+		}
+
+		if (cantSplit) {
+			writer.openTag("w:cantSplit");
+			writer.closeTag("w:cantSplit");
 		}
 		writer.closeTag( "w:trPr" );
 	}
@@ -862,9 +890,15 @@ public abstract class AbstractWordXmlWriter
 
 	public void endTableCell( boolean empty )
 	{
-		endTableCell( empty, false );
+		// The resulting doc looks more sane than with the original code
+		// endTableCell( empty, false );
+		// because an empty table cell now contains the "cell marker" (a bit like a small o).
+		// and enables the user to tab into the cell and enter text directly;
+		// whereas with the old code, the cell was completely empty and the text caret
+		// could only be placed into the cell using a mouse double-click.
+		endTableCell( empty, true );
 	}
-	
+
 	public void endTableCell( boolean empty, boolean inForeign )
 	{
 
@@ -912,7 +946,7 @@ public abstract class AbstractWordXmlWriter
 		writer.openTag("w:p");
 		writer.closeTag("w:p");
 	}
-	
+
 	public void insertHiddenParagraph( )
 	{
 		writer.openTag( "w:p" );
@@ -1042,6 +1076,7 @@ public abstract class AbstractWordXmlWriter
 		return imageId++;
 	}
 
+	@SuppressWarnings("deprecation")
 	private void writeTextInParagraph( int type, String txt, IStyle style,
 			String fontFamily, HyperlinkInfo info, int paragraphWidth,
 			boolean runIsRtl )
@@ -1154,7 +1189,31 @@ public abstract class AbstractWordXmlWriter
 
 		if ( isField )
 		{
-			writeAutoText( type );
+			if (!(type == AbstractEmitterImpl.CUSTOM_FIELD))
+				writeAutoText( type );
+			else{
+				writeSimpleField( txt );
+				writer.closeTag( "w:r" );
+				writeFieldSeparator(style, fontFamily);
+				writer.openTag( "w:r" );
+				writer.openTag( "w:rPr" );
+				writeRunProperties( style, fontFamily, info );
+				if ( isInline )
+				{
+					writeAlign( style.getTextAlign( ), direction );
+					writeBackgroundColor( style.getBackgroundColor( ) );
+					writePosition( style.getVerticalAlign( ), style
+								.getProperty( StyleConstants.STYLE_FONT_SIZE ) );
+						writeRunBorders( style );
+				}
+				if ( !isField && runIsRtl )
+				{
+					writer.openTag( "w:rtl" );
+					writer.closeTag( "w:rtl" );
+				}
+				writer.closeTag( "w:rPr" );
+				writeString( txt, style );
+			}
 		}
 		else
 		{
@@ -1175,10 +1234,9 @@ public abstract class AbstractWordXmlWriter
 		}
 		closeHyperlink( info );
 	}
-	
 	/**
 	 * function emulate the overflow hidden behavior on table cell
-	 * 
+	 *
 	 * @param text
 	 *            String to check
 	 * @param style
@@ -1218,10 +1276,10 @@ public abstract class AbstractWordXmlWriter
 		sb.append( cropOverflowWord( text, fm, cellWidthInPointAdv ) );
 		return sb.toString( );
 	}
-	
+
 	/**
 	 * crop words according to the given container point advance
-	 * 
+	 *
 	 * @param text
 	 *            it is a given word
 	 * @param fm
@@ -1287,7 +1345,32 @@ public abstract class AbstractWordXmlWriter
 
 		if ( isField )
 		{
-			writeAutoText( type );
+			if (!(type == AbstractEmitterImpl.CUSTOM_FIELD))
+				writeAutoText( type );
+			else{
+				writeSimpleField( txt );
+				writer.closeTag( "w:r" );
+				writeFieldSeparator(style, fontFamily);
+				writer.openTag( "w:r" );
+				writer.openTag( "w:rPr" );
+				writeRunProperties( style, fontFamily, info );
+				if ( isInline )
+				{
+					writeAlign( textAlign, direction );
+					writeBackgroundColor( style.getBackgroundColor( ) );
+					writePosition( style.getVerticalAlign( ), style
+								.getProperty( StyleConstants.STYLE_FONT_SIZE ) );
+						writeRunBorders( style );
+				}
+				if ( !isField && runIsRtl )
+				{
+					writer.openTag( "w:rtl" );
+					writer.closeTag( "w:rtl" );
+				}
+				writer.closeTag( "w:rPr" );
+				writeString( txt, style );
+			}
+
 		}
 		else
 		{
@@ -1456,5 +1539,10 @@ public abstract class AbstractWordXmlWriter
 	private int getLineId( )
 	{
 		return lineId++;
+	}
+
+	public void writeEmptyElement(String tag) {
+		writer.openTag(tag);
+		writer.closeTag(tag);
 	}
 }

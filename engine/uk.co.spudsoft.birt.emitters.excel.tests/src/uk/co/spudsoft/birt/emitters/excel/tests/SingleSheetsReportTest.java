@@ -121,7 +121,7 @@ public class SingleSheetsReportTest extends ReportRunner {
 			assertNotNull(workbook);
 			
 			assertEquals( 1, workbook.getNumberOfSheets() );
-			assertEquals( "Number Formats Test Report", workbook.getSheetAt(0).getSheetName());
+			assertEquals( "Sheet0", workbook.getSheetAt(0).getSheetName());
 			
 			assertEquals(11, firstNullRow(workbook.getSheetAt(0)));
 		} finally {

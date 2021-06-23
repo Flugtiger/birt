@@ -53,9 +53,6 @@ public class Borders2ReportTest extends ReportRunner {
 		CellStyle styleLeft = ( cellLeft == null ) ? null : cellLeft.getCellStyle();
 		CellStyle styleRight = ( cellRight == null ) ? null : cellRight.getCellStyle();
 		
-		System.out.println( "style == " + style );
-		System.out.println( "style == " + style );
-		
 		if( ( top != style.getBorderTop() ) && 
 				( ( styleUp == null ) || ( top != styleUp.getBorderBottom() ) ) ) {
 			assertEquals( top,    style.getBorderTop() );

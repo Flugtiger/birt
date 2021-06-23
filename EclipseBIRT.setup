@@ -104,7 +104,7 @@
   <setupTask
       xsi:type="git:GitCloneTask"
       id="git.clone.birt"
-      remoteURI="flugtiger/birt">
+      remoteURI="hvbtup/birt">
     <annotation
         source="http://www.eclipse.org/oomph/setup/InducedChoices">
       <detail
@@ -241,7 +241,7 @@
     <setupTask
         xsi:type="setup:EclipseIniTask"
         option="-Doomph.redirection.birt"
-        value="=https://github.com/Flugtiger/birt/raw/flugtiger_master/EclipseBIRT.setup->${git.clone.birt.location|uri}/EclipseBIRT.setup"
+        value="=https://github.com/hvbtup/birt/raw/flugtiger_master/EclipseBIRT.setup->${git.clone.birt.location|uri}/EclipseBIRT.setup"
         vm="true">
       <description>Set an Oomph redirection system property to redirect the logical location of this setup to its physical location in the Git clone.</description>
     </setupTask>

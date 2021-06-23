@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.logging.Logger;
 
 import org.eclipse.birt.core.exception.BirtException;
 import org.eclipse.birt.report.engine.content.IContent;
@@ -57,6 +58,33 @@ public class BlockContainerArea extends ContainerArea implements IContainerArea
 
 	public void add( AbstractArea area )
 	{
+		if (area instanceof ContainerArea) {
+			ContainerArea c = (ContainerArea)area;
+			if (c.getContent() != null && c.getContent().getUserProperties() != null) {
+				// Variant 1 (not suitable for MS Word). The property has to be set for a
+				// Label, a Dynamic Text Item or similar (not for a table row or cell).
+				// A possible structure:
+				// Table
+				// Header
+				// Details
+				// Footer Row with Dynamic Text Item with FixYPosition=20cm.
+				// Footer Row with data which should be displayed starting at y=20cm.
+				String fixYPosition = (String)c.getContent().getUserProperties().get("FixYPosition");
+				if (fixYPosition != null) {
+					Logger log = Logger.getLogger(getClass().getName());
+					log.info("FixYPosition(a)=" + fixYPosition);
+					int grenze = getDimensionValue(fixYPosition);
+					int absBP = getAbsoluteBP();
+					log.info("Detected UserProperty FixYPosition=" + grenze + ", currentBP=" + currentBP + ", absBP=" + absBP);
+					if (absBP > grenze) {
+						log.fine("Page break required");
+					} else if (absBP < grenze) {
+						log.info("Increment currentBP");
+						currentBP += (grenze - absBP);
+					}
+				}
+			}
+		}
 		children.add( area );
 		area.setAllocatedPosition( currentIP + getOffsetX( ), currentBP
 				+ getOffsetY( ) );

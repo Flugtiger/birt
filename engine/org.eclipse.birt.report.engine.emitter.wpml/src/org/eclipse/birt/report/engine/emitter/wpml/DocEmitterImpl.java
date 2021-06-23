@@ -20,6 +20,7 @@ import org.eclipse.birt.report.engine.content.IContent;
 import org.eclipse.birt.report.engine.content.IForeignContent;
 import org.eclipse.birt.report.engine.content.IStyle;
 import org.eclipse.birt.report.engine.content.ITableContent;
+import org.eclipse.birt.report.engine.content.impl.CellContent;
 import org.eclipse.birt.report.engine.css.dom.CompositeStyle;
 import org.eclipse.birt.report.engine.css.engine.StyleConstants;
 import org.eclipse.birt.report.engine.css.engine.value.css.CSSConstants;
@@ -81,7 +82,7 @@ public class DocEmitterImpl extends AbstractEmitterImpl
 					inlineStyles.pop( );
 				}
 			}
-			
+
 			if ( !CSSConstants.CSS_INLINE_VALUE.equalsIgnoreCase( container
 					.getComputedStyle( ).getDisplay( ) ) )
 			{
@@ -148,11 +149,14 @@ public class DocEmitterImpl extends AbstractEmitterImpl
 	{
 		if ( IForeignContent.HTML_TYPE.equalsIgnoreCase( foreign.getRawType( ) ) )
 		{
+
+			Boolean userDecision = (Boolean)getUserProperty(foreign, PROP_NAME_NESTED_TABLE);
+			
 			inForeign = true;
 			// store the inline state before the HTML foreign.
 			boolean inlineBrother = !context.isFirstInline( );
 			// the inline state needs be recalculated in the HTML foreign.
-			
+
 			// if the foreign itself is not inline
 			if ( !"inline".equalsIgnoreCase( foreign.getComputedStyle( ) //$NON-NLS-1$
 					.getDisplay( ) ) )
@@ -169,34 +173,61 @@ public class DocEmitterImpl extends AbstractEmitterImpl
 
 			HTML2Content.html2Content( foreign );
 
-			context.startCell( );
-
-			if ( context.isAfterTable( ) )
-			{
-				wordWriter.insertHiddenParagraph( );
-				context.setIsAfterTable( false );
+			// Should we create a 1x1-sized nested table for the content?
+			
+			// Note that *without* the nested table, the HTML text item's
+			// border, padding and margin properties will be ignored.
+			// However, the resulting file is smaller and it is a lot easier
+			// to actually edit it later. 
+			
+			boolean createNestedTable = true; // this is how BIRT 4.3.2 works
+			
+			// Allow the client to decide explicitly what's to do here, using a UserProperty
+			if (userDecision != null) {
+				createNestedTable = userDecision;
+			} else {
+				// Detect what's usually best automatically:
+				// Create a nested table unless the Foreign is directly located in a Cell.  
+				createNestedTable = ! (foreign.getParent() instanceof CellContent);
 			}
-			int width = WordUtil.convertTo( foreign.getWidth( ),
-					context.getCurrentWidth( ), reportDpi );
-			width = Math.min( width, context.getCurrentWidth( ) );
-			wordWriter.startTable( foreign.getComputedStyle( ), width, inForeign );
-			wordWriter.startTableRow( -1 );
-			wordWriter
-					.startTableCell( width, foreign.getComputedStyle( ), null );
-			writeBookmark(foreign);
-			writeToc( foreign );
-			contentVisitor.visitChildren( foreign, null );
+			
+			if (createNestedTable) {
+				context.startCell( );
+				if ( context.isAfterTable( ) )
+				{
+					wordWriter.insertHiddenParagraph( );
+					context.setIsAfterTable( false );
+				}
+				int width = WordUtil.convertTo( foreign.getWidth( ),
+						context.getCurrentWidth( ), reportDpi );
+				width = Math.min( width, context.getCurrentWidth( ) );
+				wordWriter.startTable( foreign.getComputedStyle( ), width, inForeign );
+				wordWriter.startTableRow( -1 );
+				wordWriter
+						.startTableCell( width, foreign.getComputedStyle( ), null );
+				writeBookmark(foreign);
+				writeToc( foreign );
+				contentVisitor.visitChildren( foreign, null );
 
-			adjustInline( );
+				adjustInline( );
 
-			wordWriter.endTableCell( context.needEmptyP( ) );
+				wordWriter.endTableCell( context.needEmptyP( ) );
 
-			context.endCell( );
-			wordWriter.endTableRow( );
-			wordWriter.endTable( );
-			context.setIsAfterTable( true );
-			context.addContainer( true );
-			hasPInside = false;
+				context.endCell( );
+				wordWriter.endTableRow( );
+				wordWriter.endTable( );
+				context.setIsAfterTable( true );
+				context.addContainer( true );
+				hasPInside = false;
+			} else {
+				writeBookmark(foreign);
+				writeToc( foreign );
+				// Note that margin, padding, border, background of the dynamic text item
+				// will be ignored.
+				contentVisitor.visitChildren( foreign, null );
+				adjustInline( );
+				hasPInside = true;
+			}
 			// restore the inline state after the HTML foreign.
 			if ( inlineBrother )
 			{

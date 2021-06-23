@@ -1,12 +1,12 @@
 /*************************************************************************************
  * Copyright (c) 2011, 2012, 2013 James Talbut.
  *  jim-emitters@spudsoft.co.uk
- *  
- * All rights reserved. This program and the accompanying materials 
+ *
+ * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * 
+ *
  * Contributors:
  *     James Talbut - Initial implementation.
  ************************************************************************************/
@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -51,13 +52,16 @@ import org.eclipse.birt.report.engine.api.IRunTask;
 import org.eclipse.birt.report.engine.api.RenderOption;
 import org.eclipse.birt.report.engine.api.impl.ReportEngine;
 import org.eclipse.birt.report.model.api.IResourceLocator;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 
 import uk.co.spudsoft.birt.emitters.bugfix.FixedRenderTask;
+import uk.co.spudsoft.birt.emitters.bugfix.FixedRunTask;
 import uk.co.spudsoft.birt.emitters.excel.ExcelEmitter;
 import uk.co.spudsoft.birt.emitters.excel.tests.framework.Activator;
 
 public class ReportRunner {
-	
+
 	protected boolean debug;
 	protected boolean removeEmptyRows = true;
 	protected boolean htmlPagination;
@@ -66,7 +70,11 @@ public class ReportRunner {
 	protected boolean nestTableInLastCell;
 	protected boolean autoFilter;
 	protected boolean blankLineAfterTopLevelTable;
-	
+	protected boolean extractMode;
+	protected boolean noStyles;
+	protected boolean forceRecalculation;
+
+
 	protected Boolean displayFormulas = null;
 	protected Boolean displayGridlines = null;
 	protected Boolean displayRowColHeadings = null;
@@ -74,16 +82,21 @@ public class ReportRunner {
 	protected Boolean disableGrouping = null;
 	protected Boolean structuredHeader = null;
 	protected Boolean groupSummaryHeader = null;
-	
+
 	protected Integer spannedRowHeight = null;
-	
+
 	protected String templateFile = null;
-	
+
+	protected Locale defaultLocale = Locale.UK;
+
 	protected Map<String,Object> parameters = new HashMap<String, Object>();
 	protected long startTime;
 	protected long runTime;
 	protected long renderTime;
-	
+
+	@Rule
+	public TestName testName = new TestName();
+
 	private static byte[] getBytesFromFile(File file) throws IOException {
 	    InputStream is = new FileInputStream(file);
 	    try {
@@ -98,7 +111,7 @@ public class ReportRunner {
 	    	is.close();
 	    }
 	}
-	
+
 	public boolean mergedRegion( Sheet sheet, int top, int left, int bottom, int right ) {
 		for( int i = 0; i < sheet.getNumMergedRegions(); ++i ) {
 			CellRangeAddress curRegion = sheet.getMergedRegion(i);
@@ -111,7 +124,7 @@ public class ReportRunner {
 		}
 		return false;
 	}
-	
+
 	protected int firstNullRow(Sheet sheet) {
 		int i = 0;
 		while( sheet.getRow(i) != null ) {
@@ -119,7 +132,7 @@ public class ReportRunner {
 		}
 		return i;
 	}
-	
+
 	protected int lastRow(Sheet sheet) {
 		int max = 0;
 		for(Row row : sheet) {
@@ -127,7 +140,7 @@ public class ReportRunner {
 		}
 		return max;
 	}
-	
+
 	protected int greatestNumColumns(Sheet sheet) {
 		int result = 0;
 		for(Row row : sheet) {
@@ -137,7 +150,7 @@ public class ReportRunner {
 		}
 		return result;
 	}
-	
+
 	private void addParameters( IEngineTask reportRunTask ) {
 		for( Entry<String,Object> entry : parameters.entrySet() ) {
 			reportRunTask.setParameterValue(entry.getKey(), entry.getValue());
@@ -151,7 +164,7 @@ public class ReportRunner {
 
 	protected File createTempFile( String base, String extension ) throws IOException {
 		String tempDir = System.getProperty( "java.io.tmpdir" );
-		
+
 		for( int i = 0; i < Integer.MAX_VALUE; ++i ) {
 			File result =  new File( tempDir + File.separator + base + Integer.toString(i) + extension );
 			if( ! result.exists() ) {
@@ -160,7 +173,7 @@ public class ReportRunner {
 		}
 		throw new IOException( "Temporary file not available" );
 	}
-	
+
 	protected String baseFilename( String filename ) {
 		int index = filename.lastIndexOf( File.separatorChar );
 		if( index > 0 ) {
@@ -172,49 +185,51 @@ public class ReportRunner {
 		}
 		return filename;
 	}
-	
+
 	protected InputStream runAndRenderReportDefaultTask( String filename, String outputFormat ) throws BirtException, IOException {
 
-        IReportEngine reportEngine = createReportEngine();
-		
+		Locale.setDefault(defaultLocale);
+
+		IReportEngine reportEngine = createReportEngine();
+
 		String filepath = deriveFilepath(filename);
 
 		InputStream resourceStream = openFileStream( filename );
-		
+
 		assertNotNull( resourceStream );
 		try {
 			IReportRunnable reportRunnable = reportEngine.openReportDesign( resourceStream );
 			assertNotNull(reportRunnable);
-			
+
 			File tempDoc = createTempFile( baseFilename( filename ), ".rptdocument");
 			assertNotNull(tempDoc);
-			
+
 			try {
 				IRunTask reportRunTask = reportEngine.createRunTask( reportRunnable );
 				assertNotNull(reportRunTask);
 				try {
 					addParameters( reportRunTask );
 					addFilepathToAppContext(filepath, reportRunTask);
-					
+
 					startTime = System.currentTimeMillis();
 					IReportDocument reportDocument = runReport(reportEngine,
 							reportRunTask, tempDoc);
 			        runTime = System.currentTimeMillis();
-			        
+
 			        IRenderTask renderTask = reportEngine.createRenderTask( reportDocument );
 			        assertNotNull(renderTask);
 			        try {
 			        	File tempOutput = createTempFile(baseFilename( filename ), "." + outputFormat);
 			        	System.err.println( tempOutput );
-			        	FileOutputStream outputStream = new FileOutputStream( tempOutput ); 
-			        	
+			        	FileOutputStream outputStream = new FileOutputStream( tempOutput );
+
 				        assertNotNull(outputStream);
 				        try {
 					        renderTask.setRenderOption(prepareRenderOptions( outputFormat, outputStream ));
-					        
+
 					        renderTask.render();
 					        renderTime = System.currentTimeMillis();
-					        assertEquals(0, renderTask.getErrors().size());					        
+					        assertEquals(0, renderTask.getErrors().size());
 				        } finally {
 				        	outputStream.close();
 				        }
@@ -236,48 +251,50 @@ public class ReportRunner {
 
 	protected InputStream runAndRenderReportFileNotStream( String filename, String outputFormat ) throws BirtException, IOException {
 
-        IReportEngine reportEngine = createReportEngine();
-		
+		Locale.setDefault(defaultLocale);
+
+		IReportEngine reportEngine = createReportEngine();
+
 		String filepath = deriveFilepath(filename);
 
 		InputStream resourceStream = openFileStream( filename );
-		
+
 		assertNotNull( resourceStream );
 		try {
 			IReportRunnable reportRunnable = reportEngine.openReportDesign( resourceStream );
 			assertNotNull(reportRunnable);
-			
+
 			File tempDoc = createTempFile(baseFilename( filename ), ".rptdocument");
 			assertNotNull(tempDoc);
-			
+
 			try {
 				IRunTask reportRunTask = reportEngine.createRunTask( reportRunnable );
 				assertNotNull(reportRunTask);
 				try {
 					addParameters( reportRunTask );
 					addFilepathToAppContext(filepath, reportRunTask);
-					
+
 					IReportDocument reportDocument = runReport(reportEngine,
 							reportRunTask, tempDoc);
-			        
+
 			        IRenderTask renderTask = reportEngine.createRenderTask( reportDocument );
 			        assertNotNull(renderTask);
 			        try {
 			        	File outputFile = createTempFile(baseFilename( filename ), "." + outputFormat);
 			        	System.err.println( outputFile );
-			        	
+
 				        assertNotNull( outputFile );
 				        renderTask.setRenderOption(prepareRenderOptions( outputFormat, null ));
 				        renderTask.getRenderOption().setOutputFileName( outputFile.getCanonicalPath() );
-				        
+
 				        renderTask.render();
-				        assertEquals(0, renderTask.getErrors().size());					        
+				        assertEquals(0, renderTask.getErrors().size());
 
 				        InputStream result = new ByteArrayInputStream(getBytesFromFile(outputFile));
-				        
+
 				        boolean deleted = outputFile.delete();
 				        assertTrue( deleted );
-				        
+
 				        return result;
 			        } finally {
 				        renderTask.close();
@@ -295,38 +312,40 @@ public class ReportRunner {
 
 	protected InputStream runAndRenderReportAsOne( String filename, String outputFormat ) throws BirtException, IOException {
 
+		Locale.setDefault(defaultLocale);
+
         IReportEngine reportEngine = createReportEngine();
-		
+
 		String filepath = deriveFilepath(filename);
 
 		InputStream resourceStream = openFileStream( filename );
-		
+
 		assertNotNull( resourceStream );
 		try {
 			IReportRunnable reportRunnable = reportEngine.openReportDesign( resourceStream );
 			assertNotNull(reportRunnable);
-			
+
 			File tempDoc = createTempFile(baseFilename( filename ), ".rptdocument");
 			assertNotNull(tempDoc);
-			
+
 			try {
 				IRunAndRenderTask reportRunRenderTask = reportEngine.createRunAndRenderTask( reportRunnable );
 				assertNotNull(reportRunRenderTask);
 				try {
 					addParameters( reportRunRenderTask );
 					addFilepathToAppContext(filepath, reportRunRenderTask);
-					
+
 		        	File tempOutput = createTempFile(baseFilename( filename ), "." + outputFormat);
 		        	System.err.println( tempOutput );
-		        	FileOutputStream outputStream = new FileOutputStream( tempOutput ); 
-		        	
+		        	FileOutputStream outputStream = new FileOutputStream( tempOutput );
+
 			        assertNotNull(outputStream);
 			        try {
-				        
+
 				        reportRunRenderTask.setRenderOption(prepareRenderOptions( outputFormat, outputStream ));
-				        
+
 				        reportRunRenderTask.run();
-				        assertEquals(0, reportRunRenderTask.getErrors().size());					        
+				        assertEquals(0, reportRunRenderTask.getErrors().size());
 			        } finally {
 			        	outputStream.close();
 			        }
@@ -345,63 +364,66 @@ public class ReportRunner {
 
 	protected InputStream runAndRenderReportCustomTask( String filename, String outputFormat ) throws BirtException, IOException {
 
-        IReportEngine reportEngine = createReportEngine();
-		
+		Locale.setDefault(defaultLocale);
+
+		IReportEngine reportEngine = createReportEngine();
+
 		String filepath = deriveFilepath(filename);
 
 		InputStream resourceStream = openFileStream( filename );
-		
+
 		assertNotNull( resourceStream );
 		try {
-			File designFile = new File( filepath ); 
-			IResourceLocator resourceLocator = new ResourceLocator(designFile.getParentFile()); 
-			
+			File designFile = new File( filepath );
+			IResourceLocator resourceLocator = new ResourceLocator(designFile.getParentFile());
+
 			IReportRunnable reportRunnable = reportEngine.openReportDesign( filename, resourceStream, resourceLocator );
 			assertNotNull(reportRunnable);
-			
+
 			File tempDoc = createTempFile(baseFilename( filename ), ".rptdocument");
 			assertNotNull(tempDoc);
-			
+
 			try {
-				IRunTask reportRunTask = reportEngine.createRunTask( reportRunnable );
+				IRunTask reportRunTask = new FixedRunTask((ReportEngine)reportEngine, reportRunnable);
+						// reportEngine.createRunTask( reportRunnable );
 
 				// reportRunTask.enableProgressiveViewing(true);
-				
+
 				assertNotNull(reportRunTask);
 				try {
 					addParameters( reportRunTask );
 					addFilepathToAppContext(filepath, reportRunTask);
 					addToAppContext(reportRunTask, "org.eclipse.birt.data.query.ResultBufferSize", 256 );
-					
+
 					startTime = System.currentTimeMillis();
 					IReportDocument reportDocument = runReport(reportEngine,
 							reportRunTask, tempDoc);
 					runTime = System.currentTimeMillis();
-			        System.err.println( "Run " + baseFilename( filename ) + " : " + ((runTime - startTime) / 1000.0) + "s");
-			        
+			        System.err.println( "Initial run " + baseFilename( filename ) + " : " + ((runTime - startTime) / 1000.0) + "s");
+
 			        // IRenderTask renderTask = reportEngine.createRenderTask( reportDocument );
 			        IRenderTask renderTask = new FixedRenderTask( (ReportEngine)reportEngine, reportRunnable, reportDocument );
 			        assertNotNull(renderTask);
 			        try {
 			        	File tempOutput = createTempFile(baseFilename( filename ), "." + outputFormat);
-			        	System.err.println( tempOutput );
-			        	FileOutputStream outputStream = new FileOutputStream( tempOutput ); 
-			        	
+			        	FileOutputStream outputStream = new FileOutputStream( tempOutput );
+
 				        assertNotNull(outputStream);
 				        try {
-					        
+
 					        renderTask.setRenderOption(prepareRenderOptions( outputFormat, outputStream ));
-					        
+
 					        System.err.println( "Starting Render");
 					        renderTask.render();
-					        assertEquals(0, renderTask.getErrors().size());					        
+					        assertEquals(0, renderTask.getErrors().size());
 				        } finally {
 							renderTime = System.currentTimeMillis();
-					        System.err.println( "Run " + baseFilename( filename ) + " : " + ((runTime - startTime) / 1000.0) + "s");
-					        System.err.println( "Render " + baseFilename( filename ) + " : " + ((renderTime - runTime) / 1000.0) + "s");
+					        System.err.println( "File " + testName.getMethodName() + ": " + baseFilename( filename ) + " : " + tempOutput );
+					        System.err.println( "Run " + testName.getMethodName() + ": " + baseFilename( filename ) + " : " + ((runTime - startTime) / 1000.0) + "s");
+					        System.err.println( "Render " + testName.getMethodName() + ": " + baseFilename( filename ) + " : " + ((renderTime - runTime) / 1000.0) + "s");
 				        	outputStream.close();
 				        }
-				        
+
 				        return new ByteArrayInputStream(getBytesFromFile(tempOutput));
 			        } finally {
 				        renderTask.close();
@@ -422,7 +444,7 @@ public class ReportRunner {
 
         IReportEngineFactory engineFactory = (IReportEngineFactory)Platform.createFactoryObject( IReportEngineFactory.EXTENSION_REPORT_ENGINE_FACTORY );
 		assertNotNull(engineFactory);
-		
+
 		IReportEngine reportEngine = engineFactory.createReportEngine( config );
 		assertNotNull(reportEngine);
 		return reportEngine;
@@ -430,12 +452,12 @@ public class ReportRunner {
 
 	protected String deriveFilepath(String filename) throws MalformedURLException {
 		String filepath = null;
-		
+
 		File file = new File(filename);
 		if( ( file.isAbsolute() ) && ( file.exists() ) ) {
 			return filename;
 		} else if( Activator.getContext() != null ) {
-			URL bundleLocation = new URL(Activator.getContext().getBundle().getLocation()); 
+			URL bundleLocation = new URL(Activator.getContext().getBundle().getLocation());
 			// System.err.println( "Activator.getContext().getBundle().getLocation() = " + bundleLocation );
 			String bundleLocationFile = bundleLocation.getFile();
 			if(bundleLocationFile.startsWith("file:/")) {
@@ -446,14 +468,14 @@ public class ReportRunner {
 			URL resourceLocation = this.getClass().getResource( filename );
 			String resourceLocationFile = resourceLocation.getFile();
 			// System.err.println( "resourceLocationFile = " + resourceLocationFile );
-			
-			
+
+
 			filepath = bundleLocationFile + "bin" + resourceLocationFile;
 			// System.err.println( "filepath = " + filepath );
 		}
 		return filepath;
 	}
-	
+
 	protected InputStream openFileStream( String filename ) throws FileNotFoundException {
 		File file = new File( filename );
 		if( file.exists() ) {
@@ -468,7 +490,7 @@ public class ReportRunner {
 			addToAppContext(task, "__report", filepath);
 		}
 	}
-	
+
 	private void addToAppContext( IEngineTask task, String key, Object value ) {
 		@SuppressWarnings("unchecked")
 		Map<String,Object> appContext = (Map<String,Object>)task.getAppContext();
@@ -476,7 +498,7 @@ public class ReportRunner {
 			appContext = new HashMap<String,Object>();
 			task.setAppContext(appContext);
 		}
-		appContext.put(key, value);					
+		appContext.put(key, value);
 	}
 
 	protected IReportDocument runReport(IReportEngine reportEngine,
@@ -490,9 +512,9 @@ public class ReportRunner {
 			System.err.println( "Error: " + errorObject );
 		}
 		assertEquals( 0, reportRunTask.getErrors().size() );
-		
+
 		reportRunTask.close();
-		
+
 		IReportDocument reportDocument = reportEngine.openReportDocument( tempDoc.getCanonicalPath() );
 		assertNotNull(reportDocument);
 		return reportDocument;
@@ -503,6 +525,11 @@ public class ReportRunner {
 		renderOptions.setOutputFormat( outputFormat );
 		if( outputStream != null ) {
 			renderOptions.setOutputStream( outputStream );
+		}
+		if( "xls".equals(outputFormat)) {
+			renderOptions.setEmitterID("uk.co.spudsoft.birt.emitters.excel.XlsEmitter");
+		} else if ( "xlsx".equals(outputFormat)) {
+			renderOptions.setEmitterID("uk.co.spudsoft.birt.emitters.excel.XlsxEmitter");
 		}
 		if( debug ) {
 			renderOptions.setOption( "ExcelEmitter.DEBUG", Boolean.TRUE);
@@ -551,12 +578,21 @@ public class ReportRunner {
 			renderOptions.setOption( ExcelEmitter.BLANK_ROW_AFTER_TOP_LEVEL_TABLE, true );
 		}
 		if( spannedRowHeight != null ) {
-			renderOptions.setOption( ExcelEmitter.SPANNED_ROW_HEIGHT, spannedRowHeight );			
+			renderOptions.setOption( ExcelEmitter.SPANNED_ROW_HEIGHT, spannedRowHeight );
 		}
 		if( templateFile != null ) {
 			renderOptions.setOption( ExcelEmitter.TEMPLATE_FILE, templateFile );
 		}
-		
+		if( extractMode ) {
+			renderOptions.setOption( ExcelEmitter.EXTRACT_MODE, true );
+		}
+		if( noStyles ) {
+			renderOptions.setOption( ExcelEmitter.NO_STYLES, true );
+		}
+		if( forceRecalculation ) {
+			renderOptions.setOption( ExcelEmitter.FORCE_RECALCULATION, true );
+		}
+
 		return renderOptions;
 	}
 

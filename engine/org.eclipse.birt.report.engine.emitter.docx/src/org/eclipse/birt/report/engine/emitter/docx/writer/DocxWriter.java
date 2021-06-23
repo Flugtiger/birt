@@ -43,11 +43,14 @@ public class DocxWriter implements IWordWriter
 	private boolean rtl = false;
 
 	private boolean showHeaderOnFirst;
+	
+	private int wordVersion;
 
-	public DocxWriter( OutputStream out, String tempFileDir, int compressionMode )
+	public DocxWriter( OutputStream out, String tempFileDir, int compressionMode, int wordVersion )
 	{
 		pkg = Package.createInstance( out, tempFileDir, compressionMode );
 		pkg.setExtensionData( new ImageManager( ) );
+		this.wordVersion = wordVersion;
 	}
 
 	public void start( boolean rtl, String creator, String title,
@@ -119,7 +122,7 @@ public class DocxWriter implements IWordWriter
 		String relationshipType = RelationshipTypes.DOCUMENT;
 		IPart documentPart = pkg.getPart( uri, type, relationshipType );
 		document = new Document( documentPart, backgroundColor,
-				backgroundImageUrl, backgroundHeight, backgroundWidth, rtl );
+				backgroundImageUrl, backgroundHeight, backgroundWidth, rtl, wordVersion );
 		document.start( );
 		currentComponent = document;
 	}
@@ -147,7 +150,7 @@ public class DocxWriter implements IWordWriter
 	public void startHeader( boolean showHeaderOnFirst, int headerHeight,
 			int headerWidth ) throws IOException
 	{
-		currentComponent = document.createHeader( headerHeight, headerWidth );
+		currentComponent = document.createHeader( showHeaderOnFirst, headerHeight, headerWidth );
 		currentComponent.start( );
 		this.showHeaderOnFirst = showHeaderOnFirst;
 	}
@@ -155,21 +158,36 @@ public class DocxWriter implements IWordWriter
 	public void endHeader( )
 	{
 		currentComponent.end( );
-		document.writeHeaderReference( currentComponent, showHeaderOnFirst );
+		document.writeHeaderReference( currentComponent, false );
 		currentComponent = document;
 	}
 
-	public void startFooter( int footerHeight, int footerWidth )
+	public boolean mustCloneFooter( ) {
+		return false;
+	}
+
+	public void startFooter( boolean isFirstPage, int footerHeight, int footerWidth )
 			throws IOException
 	{
-		currentComponent = document.createFooter( footerHeight, footerWidth );
-		currentComponent.start( );
+		if ( !isFirstPage ) {
+			currentComponent = document.createFooter( footerHeight, footerWidth );
+			currentComponent.start( );
+		} else {
+			currentComponent = null;
+		}
 	}
 
 	public void endFooter( )
 	{
-		currentComponent.end( );
-		document.writeFooterReference( currentComponent );
+		if ( currentComponent == null ) {
+			; // nothing to do.
+		} else {
+			currentComponent.end( );
+			if (!this.showHeaderOnFirst) {
+				document.writeFooterReference( currentComponent, true );
+			}
+			document.writeFooterReference( currentComponent, false );
+		}
 		currentComponent = document;
 	}
 
@@ -194,7 +212,7 @@ public class DocxWriter implements IWordWriter
 	{
 		currentComponent.startTable( style, tableWidth, false );
 	}
-	
+
 	public void startTable( IStyle style, int tableWidth, boolean inForeign )
 	{
 		currentComponent.startTable( style, tableWidth, inForeign );
@@ -211,10 +229,10 @@ public class DocxWriter implements IWordWriter
 	}
 
 	public void startTableRow( double height, boolean isHeader,
-			boolean repeatHeader, boolean fixedLayout )
+			boolean repeatHeader, boolean fixedLayout, boolean cantSplit )
 	{
 		currentComponent.startTableRow( height, isHeader, repeatHeader,
-				fixedLayout );
+				fixedLayout, cantSplit );
 	}
 
 	public void startTableRow( double height )
@@ -236,7 +254,7 @@ public class DocxWriter implements IWordWriter
 	{
 		currentComponent.endTableCell( needEmptyP );
 	}
-	
+
 	public void endTableCell( boolean needEmptyp, boolean inForeign )
 	{
 		currentComponent.endTableCell( needEmptyp, inForeign );
@@ -280,7 +298,7 @@ public class DocxWriter implements IWordWriter
 	{
 		currentComponent.writeTOC( toc, tocLevel );
 	}
-	
+
 	public void writeTOC( String toc, String color, int tocLevel,
 			boolean middleInline )
 	{
@@ -291,7 +309,7 @@ public class DocxWriter implements IWordWriter
 	{
 		currentComponent.insertHiddenParagraph( );
 	}
-	
+
 	public void insertEmptyParagraph( )
 	{
 		currentComponent.insertEmptyParagraph( );
@@ -347,4 +365,9 @@ public class DocxWriter implements IWordWriter
 				topMargin, leftMargin, pageHeight, pageWidth );
 
 	}
+
+	public void writeEmptyElement(String tag) {
+		currentComponent.writeEmptyElement(tag);
+	}
+
 }

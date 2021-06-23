@@ -13,6 +13,7 @@ package org.eclipse.birt.report.engine.nLayout.area.impl;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 import org.eclipse.birt.core.exception.BirtException;
 import org.eclipse.birt.report.engine.content.IContent;
@@ -204,6 +205,32 @@ public class RowArea extends ContainerArea
 		{
 			cArea.flipPositionForRtl( );
 		}
+		// Variante 2 . Die Property muss bei einer Cell gesetzt werden.
+		// Eine mögliche Struktur:
+		// Tabelle
+		// Header
+		// Details
+		// Footer-Row mit Cell mit VerticalTab=20cm.
+		// Footer-Row mit Daten die ab y=20cm ausgegeben werden sollen.
+		if (cArea.getContent()!=null && cArea.getContent().getUserProperties() != null) {
+			String verticalTab = (String)cArea.getContent().getUserProperties().get("VerticalTab");
+			if (verticalTab != null) {
+				Logger log = Logger.getLogger(getClass().getName());
+				log.info("VerticalTab=" + verticalTab);
+				int grenze = getDimensionValue(verticalTab);
+				log.info("Detected UserProperty VerticalTab=" + grenze + ", currentBP=" + currentBP);
+				int absBP = getAbsoluteBP();
+				log.info("absBP=" + absBP);
+				if (absBP > grenze) {
+					log.warning("Page break required");
+				} else if (absBP < grenze) {
+					log.info("Setting paddingTop and allocatedHeight...");
+					cArea.localProperties.paddingTop += (grenze - absBP);
+					cArea.setAllocatedHeight(cArea.getAllocatedHeight() + (grenze - absBP));
+				}
+			}
+		}
+		
 	}
 
 	public void addChild( IArea area )

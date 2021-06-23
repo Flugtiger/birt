@@ -274,7 +274,7 @@ public abstract class BasicComponent extends AbstractWordXmlWriter
 	{
 		writeTOC( tocText, null, level, false );
 	}
-	
+
 	protected void writeTOC( String tocText, String color, int level, boolean middleInline)
 	{
 		if ( !middleInline )
@@ -457,6 +457,7 @@ public abstract class BasicComponent extends AbstractWordXmlWriter
 		Element body = null;
 		ByteArrayOutputStream byteOut = new ByteArrayOutputStream( );
 		HTMLWriter htmlWriter = new HTMLWriter( );
+		htmlWriter.setEnableCompactMode(true); // HVB, bug 519375
 		htmlWriter.open( byteOut );
 		if ( doc != null )
 		{
@@ -664,7 +665,7 @@ public abstract class BasicComponent extends AbstractWordXmlWriter
 
 	/**
 	 * Build the margins.
-	 * 
+	 *
 	 * @param styleBuffer
 	 * @param style
 	 */
@@ -733,7 +734,7 @@ public abstract class BasicComponent extends AbstractWordXmlWriter
 
 	/**
 	 * Build the paddings.
-	 * 
+	 *
 	 * @param styleBuffer
 	 * @param style
 	 */
@@ -1066,7 +1067,7 @@ public abstract class BasicComponent extends AbstractWordXmlWriter
 
 	/**
 	 * test if the text node is in the script
-	 * 
+	 *
 	 * @param node
 	 *            text node
 	 * @return true if the text is a script, otherwise, false.
@@ -1152,19 +1153,19 @@ public abstract class BasicComponent extends AbstractWordXmlWriter
 		{
 			writer.attribute( "w:left", leftMargin );
 		}
-		
+
 		if ( rightMargin != 0 )
 		{
 			writer.attribute( "w:right", rightMargin );
 		}
-		
+
 		if ( textIndent != 0 )
 		{
 			writer.attribute( "w:firstLine", textIndent );
 		}
 		writer.closeTag( "w:ind" );
 	}
-	
+
 	abstract void start( );
 
 	abstract void end( );
